@@ -26,9 +26,8 @@ app.get("/health", (c) => {
   });
 });
 
-app.all("/auth/*", (c) => {
-  const path = c.req.path.replace(/^\/auth/, "");
-  return proxy(`${AUTH_SERVICE}${path}`, {
+app.all("/api/auth/*", (c) => {
+  return proxy(`${AUTH_SERVICE}${c.req.path}`, {
     ...c.req,
     headers: {
       ...c.req.header(),
