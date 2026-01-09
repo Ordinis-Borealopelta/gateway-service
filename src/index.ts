@@ -15,15 +15,46 @@ const CERTIFICATION_SERVICE =
 app.use(logger());
 app.use(cors());
 
-app.get("/health", (c) => {
-  return c.json({
-    status: "ok",
-    services: {
-      auth: AUTH_SERVICE,
-      academic: ACADEMIC_SERVICE,
-      certification: CERTIFICATION_SERVICE,
+async function checkServiceHealth(
+  url: string,
+): Promise<{ status: "ok" | "error"; latency?: number; error?: string }> {
+  const start = Date.now();
+  try {
+    const response = await fetch(`${url}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const latency = Date.now() - start;
+    if (response.ok) {
+      return { status: "ok", latency };
+    }
+    return { status: "error", latency, error: `HTTP ${response.status}` };
+  } catch (e) {
+    return {
+      status: "error",
+      error: e instanceof Error ? e.message : "Unknown error",
+    };
+  }
+}
+
+app.get("/health", async (c) => {
+  const [auth, academic, certification] = await Promise.all([
+    checkServiceHealth(AUTH_SERVICE),
+    checkServiceHealth(ACADEMIC_SERVICE),
+    checkServiceHealth(CERTIFICATION_SERVICE),
+  ]);
+
+  const allHealthy =
+    auth.status === "ok" &&
+    academic.status === "ok" &&
+    certification.status === "ok";
+
+  return c.json(
+    {
+      status: allHealthy ? "ok" : "degraded",
+      services: { auth, academic, certification },
     },
-  });
+    allHealthy ? 200 : 503,
+  );
 });
 
 app.all("/api/auth/*", (c) => {
