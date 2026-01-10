@@ -6,11 +6,10 @@ import { proxy } from "hono/proxy";
 
 const app = new Hono();
 
-const AUTH_SERVICE = Bun.env.AUTH_SERVICE_URL || "http://localhost:4000";
-const ACADEMIC_SERVICE =
-  Bun.env.ACADEMIC_SERVICE_URL || "http://localhost:4001";
+const AUTH_SERVICE = Bun.env.AUTH_URL || "http://localhost:4000";
+const ACADEMIC_SERVICE = Bun.env.ACADEMIC_URL || "http://localhost:4001";
 const CERTIFICATION_SERVICE =
-  Bun.env.CERTIFICATION_SERVICE_URL || "http://localhost:4002";
+  Bun.env.CERTIFICATION_URL || "http://localhost:4002";
 
 app.use(logger());
 app.use(cors());
@@ -69,7 +68,7 @@ app.all("/api/auth/*", (c) => {
   });
 });
 
-const port = Bun.env.PORT || 3000;
+const port = Bun.env.GATEWAY_PORT || 3000;
 
 serve({
   fetch: app.fetch,
